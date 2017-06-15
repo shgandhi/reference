@@ -25,9 +25,8 @@
 #include "errors.hpp"
 
 #include <grpc++/grpc++.h>
-#include <grpc++_reflection/grpc++_reflection.h>
 
-#include "proto-src/gnmi.grpc.pb.h"
+#include "gnmi.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
