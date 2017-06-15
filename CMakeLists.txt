@@ -1,24 +1,41 @@
-cmake_minimum_required(VERSION 2.8.9)
-cmake_policy(SET CMP0048 NEW)
-project(ydk_gnmi VERSION 0.1 LANGUAGES C CXX)
-#################
-
-# GRPC and Protocol Buffers libraries location
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/include/grpc" "/usr/local/include/protobuf")
-
-# Cmake find modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+cmake_minimum_required(VERSION 3.3)
+project(ydk_gnmi)
 
 find_package(Protobuf REQUIRED)
-find_package(GRPC REQUIRED)
 
-set(PROTOS
-    ${CMAKE_CURRENT_SOURCE_DIR}/protos/gnmi.proto
-)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(PROTO_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto-src)
-file(MAKE_DIRECTORY ${PROTO_SRC_DIR})
-include_directories(${PROTO_SRC_DIR})
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_SRC_DIR} ${PROTOS})
-grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${PROTO_SRC_DIR} ${PROTOS})
+set(PROTO_PATH "${CMAKE_SOURCE_DIR}/protos")
+set(GNMI_PROTO "${PROTO_PATH}/gnmi.proto")
+set(GENERATED_PROTOBUF_PATH "${CMAKE_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY ${GENERATED_PROTOBUF_PATH})
+
+set(GNMI_PB_CPP_FILE "${GENERATED_PROTOBUF_PATH}/gnmi.pb.cc")
+set(GNMI_PB_H_FILE "${GENERATED_PROTOBUF_PATH}/gnmi.pb.h")
+set(GNMI_GRPC_PB_CPP_FILE "${GENERATED_PROTOBUF_PATH}/gnmi.grpc.pb.cc")
+set(GNMI_GRPC_PB_H_FILE "${GENERATED_PROTOBUF_PATH}/gnmi.grpc.pb.h")
+add_custom_command(
+    OUTPUT "${GNMI_PB_H_FILE}"
+           "${GNMI_PB_CPP_FILE}"
+           "${GNMI_GRPC_PB_H_FILE}"
+           "${GNMI_GRPC_PB_CPP_FILE}"
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS "--proto_path=${PROTO_PATH}"
+         "--cpp_out=${GENERATED_PROTOBUF_PATH}"
+         "${GNMI_PROTO}"
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS "--proto_path=${PROTO_PATH}"
+         "--grpc_out=${GENERATED_PROTOBUF_PATH}"
+         "--plugin=protoc-gen-grpc=/usr/local/bin/GRPC_CPP_PLUGIN"
+         "${GNMI_PROTO}"
+    )
+set(GENERATED_PROTOBUF_FILES ${GNMI_PB_H_FILE} ${GNMI_PB_CPP_FILE}
+    ${GNMI_GRPC_PB_H_FILE} ${GNMI_GRPC_PB_CPP_FILE})
+
+include_directories(${GENERATED_PROTOBUF_PATH})
+link_libraries(grpc++_unsecure grpc gpr ${PROTOBUF_LIBRARY})
+
+add_library(ydk_gnmi_generated ${GENERATED_PROTOBUF_FILES})
