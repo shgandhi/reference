@@ -36,6 +36,6 @@ set(GENERATED_PROTOBUF_FILES ${GNMI_PB_H_FILE} ${GNMI_PB_CPP_FILE}
     ${GNMI_GRPC_PB_H_FILE} ${GNMI_GRPC_PB_CPP_FILE})
 
 include_directories(${GENERATED_PROTOBUF_PATH})
-link_libraries(grpc++_unsecure grpc gpr ${PROTOBUF_LIBRARY})
 
-add_library(ydk_gnmi_generated ${GENERATED_PROTOBUF_FILES})
+add_library(gnmi ${GENERATED_PROTOBUF_FILES})
+target_link_libraries(gnmi grpc++_unsecure grpc gpr ${PROTOBUF_LIBRARY})
